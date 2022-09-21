@@ -1,4 +1,4 @@
 .vs/
-HardwareLab/
 *.sln
 *.csproj
+*/obj/
