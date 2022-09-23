@@ -23,9 +23,14 @@ namespace HardwareLab {
 
 		private Word[] reg = new Word[32];
 		//we define our memory as an array of words, with enough words to add up to MAX_ADDR bytes
-		private Word[] mem = new Word[MAX_ADDR / sizeof(Word)];
+		private Byte[] mem = new Byte[MAX_ADDR / sizeof(Byte)];
 
-		public enum Register : uint {
+		#region Register Look-up Tables
+
+		/// <summary>
+		/// an enum to make register accesses safer
+		/// </summary>
+		public enum Register : int {
 			zero = 0,
 			ra = 1,
 			sp = 2,
@@ -59,40 +64,81 @@ namespace HardwareLab {
 			t5 = 30,
 			t6 = 31,
 		}
-		private static Dictionary<string, int> abi = new Dictionary<string, int> {
-			{"zero", 0},
-			{"ra", 1},
-			{"sp", 2},
-			{"gp", 3},
-			{"tp", 4},
-			{"t0", 5},
-			{"t1", 6},
-			{"t2", 7},
-			{"fp", 8}, {"s0", 8},
-			{"s1", 9},
-			{"a0", 10},
-			{"a1", 11},
-			{"a2", 12},
-			{"a3", 13},
-			{"a4", 14},
-			{"a5", 15},
-			{"a6", 16},
-			{"a7", 17},
-			{"s2", 18},
-			{"s3", 19},
-			{"s4", 20},
-			{"s5", 21},
-			{"s6", 22},
-			{"s7", 23},
-			{"s8", 24},
-			{"s9", 25},
-			{"s10", 26},
-			{"s11", 27},
-			{"t3", 28},
-			{"t4", 29},
-			{"t5", 30},
-			{"t6", 31},
+
+		/// <summary>
+		/// a dictionary used for name lookups of registers
+		/// </summary>
+		private static Dictionary<Register, string> registerNames = new Dictionary<Register, string> {
+			{ Register.zero, "zero" },
+			{ Register.ra, "ra" },
+			{ Register.sp, "sp" },
+			{ Register.gp, "gp" },
+			{ Register.tp, "tp" },
+			{ Register.t0, "t0" },
+			{ Register.t1, "t1" },
+			{ Register.t2, "t2" },
+			{ Register.fp, "fp" }, //fp is also s0
+			{ Register.s1, "s1" },
+			{ Register.a0, "a0" },
+			{ Register.a1, "a1" },
+			{ Register.a2, "a2" },
+			{ Register.a3, "a3" },
+			{ Register.a4, "a4" },
+			{ Register.a5, "a5" },
+			{ Register.a6, "a6" },
+			{ Register.a7, "a7" },
+			{ Register.s2, "s2" },
+			{ Register.s3, "s3" },
+			{ Register.s4, "s4" },
+			{ Register.s5, "s5" },
+			{ Register.s6, "s6" },
+			{ Register.s7, "s7" },
+			{ Register.s8, "s8" },
+			{ Register.s9, "s9" },
+			{ Register.s10, "s10" },
+			{ Register.s11, "s11" },
+			{ Register.t3, "t3" },
+			{ Register.t4, "t4" },
+			{ Register.t5, "t5" },
+			{ Register.t6, "t6" },
 		};
+
+		#endregion
+
+		#region Dumpers
+
+		/// <summary>
+		/// prints out the contents of all registers, except zero
+		/// </summary>
+		public void RegDump() {
+
+			for(int i = 1; i < reg.Length; i++) {
+				String regName = String.Format("{0, 4}", registerNames[(Register)i]);
+				String regVal = reg[i].ToString("X8");
+				Console.WriteLine($"{regName}: 0x{regVal}");
+			}
+		}
+
+		/// <summary>
+		/// prints out the contents of memory, with 16 bytes per line
+		/// </summary>
+		/// <param name="bytesPerLine"></param>
+		public void HexDump(int bytesPerLine = 16) {
+
+			Debug.Assert(0 < bytesPerLine, "invalid number of bytes per line");
+
+			for (int i = 0; i < mem.Length; i++) {
+
+				string b = String.Format("{0,2:X2} ", mem[i]);
+				Console.Write(b);
+
+				if ((i % bytesPerLine) == (bytesPerLine - 1)) {
+					Console.WriteLine();
+				}
+			}
+		}
+
+		#endregion
 
 		#region Register Getter and Setter
 
@@ -101,7 +147,7 @@ namespace HardwareLab {
 		/// </summary>
 		/// <param name="index"></param>
 		/// <returns></returns>
-		public Word GetReg(Register register) {
+		public Word ReadReg(Register register) {
 
 			//return zero for any attempt to read x0
 			if (register != Register.zero) return reg[(uint)register];
@@ -113,7 +159,7 @@ namespace HardwareLab {
 		/// </summary>
 		/// <param name="index"></param>
 		/// <param name="value"></param>
-		public void SetReg(Register register, Word value) {
+		public void WriteReg(Register register, Word value) {
 
 			//do nothing for any attempt to write x0
 			if (register != Register.zero) reg[(uint)register] = value;
@@ -128,40 +174,16 @@ namespace HardwareLab {
 		/// </summary>
 		/// <param name="addr"></param>
 		/// <returns></returns>
-		public Word GetWord(Addr addr) {
+		public Word ReadWord(Addr addr) {
 
-			//we subtract sizeof(Word) here so that a word read near the end will not reach out of bounds
-			Debug.Assert(addr < MAX_ADDR - sizeof(Word), "memory read out of range");
+			//check if memory access would reach beyond bounds
+			Debug.Assert(addr < MAX_ADDR - sizeof(Word) + 1, "memory read out of range");
 
-			//divide by the size of a word to get the actual index for our memory array
-			uint index = addr / sizeof(Word);
+			Word fetchedWord = 0;
+			for(int i = 0; i < sizeof(Word); i++)
+				fetchedWord |= (Word)(mem[addr + (sizeof(Word) - i) - 1] << (i * 8));
 
-			//calculate the number of bytes on the right of the word boundary
-			int rBytes = (int)(addr % sizeof(Word));
-
-			//if it is zero, our read is aligned and can simply return the word at that address
-			if (rBytes == 0)
-				return mem[index];
-			//otherwise, we must access the word at addr and the one after it to compose the word
-			else {
-
-				//calculate the number of bytes on the left of the word boundary
-				int lBytes = sizeof(Word) - rBytes;
-
-				//fetch the two words
-				Word lWord = mem[index];
-				Word rWord = mem[index + 1];
-
-				Word lMask = Word.MaxValue >> rBytes;
-				Word rMask = Word.MaxValue >> lBytes;
-
-				//this bit makes much more sense on paper
-				Word w1 = (lWord & lMask) << (rBytes * 8);
-				Word w2 = (rWord >> (lBytes * 8)) & rMask;
-
-				return w1 | w2;
-			}
-
+			return fetchedWord;
 		}
 
 		/// <summary>
@@ -169,48 +191,16 @@ namespace HardwareLab {
 		/// </summary>
 		/// <param name="addr"></param>
 		/// <param name="value"></param>
-		public void SetWord(Addr addr, Word value) {
+		public void WriteWord(Addr addr, Word value) {
 			
-			Debug.Assert(addr < MAX_ADDR - sizeof(Word), "memory write out of range");
+			//check if memory access would reach beyond bounds
+			Debug.Assert(addr < MAX_ADDR - sizeof(Word) + 1, "memory write out of range");
 
-			//divide by the size of a word to get the actual index for our memory array
-			uint index = addr / sizeof(Word);
-
-			//calculate the number of bytes on the right of the word boundary
-			int rBytes = (int)(addr % sizeof(Word));
-
-			//if it is zero, our write is aligned and can simply assign the word at that address
-			if (rBytes == 0)
-				mem[index] = value;
-			//otherwise, we must overwrite parts of the word at addr and the one after it
-			else {
-
-				//calculate the number of bytes on the left of the word boundary
-				int lBytes = sizeof(Word) - rBytes;
-
-				//calculate the two chunks of our word
-				Word lValue = value & (Word.MaxValue >> rBytes);
-				Word rValue = value & (Word.MaxValue << lBytes);
-
-				//clear the bits where we are inserting our word
-				mem[index] &= (Word.MaxValue << rBytes);
-				mem[index + 1] &= (Word.MaxValue >> lBytes);
-
-				//and insert the two chunks of our word into their respective blocks
-				mem[index] |= lValue;
-				mem[index + 1] |= rValue;
-			}
+			for (int i = 0; i < sizeof(Word); i++)
+				mem[addr + (sizeof(Word) - i) - 1] = (Byte)((value >> (i * 8)) & 0xFF);
 		}
 
 		#endregion
-
-		public void DumpMemory() {
-
-			for (int i = 0; i < mem.Length; i++) {
-
-				Console.WriteLine(mem[i].ToString("X"));
-			}
-		}
 
 		#region Instructions
 
@@ -224,9 +214,9 @@ namespace HardwareLab {
 		/// <param name="offset"></param>
 		public void LW(Register rd, Register rs1, int offset) {
 
-			Addr srcAddr = (Addr)(GetReg(rs1) + offset);
-			Word fetchedWord = GetWord(srcAddr);
-			SetReg(rd, fetchedWord);
+			Addr srcAddr = (Addr)(ReadReg(rs1) + offset);
+			Word fetchedWord = ReadWord(srcAddr);
+			WriteReg(rd, fetchedWord);
 		}
 
 		/// <summary>
@@ -237,9 +227,9 @@ namespace HardwareLab {
 		/// <param name="offset"></param>
 		public void SW(Register rs1, Register rs2, int offset) {
 
-			Addr destAddr = (Addr)(GetReg(rs1) + offset);
-			Word wordToStore = GetReg(rs2);
-			SetWord(destAddr, wordToStore);
+			Addr destAddr = (Addr)(ReadReg(rs1) + offset);
+			Word wordToStore = ReadReg(rs2);
+			WriteWord(destAddr, wordToStore);
 		}
 
 		#endregion
@@ -254,9 +244,9 @@ namespace HardwareLab {
 		/// <param name="rs2"></param>
 		public void ADD(Register rd, Register rs1, Register rs2) {	
 
-			Word opA = GetReg(rs1);
-			Word opB = GetReg(rs2);
-			SetReg(rd, opA + opB);
+			Word opA = ReadReg(rs1);
+			Word opB = ReadReg(rs2);
+			WriteReg(rd, opA + opB);
 		}
 
 		/// <summary>
@@ -267,8 +257,8 @@ namespace HardwareLab {
 		/// <param name="imm"></param>
 		public void ADDI(Register rd, Register rs1, Word imm) {
 
-			Word opA = GetReg(rs1);
-			SetReg(rd, opA + imm);
+			Word opA = ReadReg(rs1);
+			WriteReg(rd, opA + imm);
 		}
 
 		/// <summary>
@@ -279,9 +269,9 @@ namespace HardwareLab {
 		/// <param name="rs2"></param>
 		public void SUB(Register rd, Register rs1, Register rs2) {
 
-			Word opA = GetReg(rs1);
-			Word opB = GetReg(rs2);
-			SetReg(rd, opA - opB);
+			Word opA = ReadReg(rs1);
+			Word opB = ReadReg(rs2);
+			WriteReg(rd, opA - opB);
 		}
 
 		#endregion
@@ -304,7 +294,7 @@ namespace HardwareLab {
 		/// <param name="offset"></param>
 		public void BNE(Register rs1, Register rs2, int offset) {
 
-			if (GetReg(rs1) != GetReg(rs2)) pc += offset;
+			if (ReadReg(rs1) != ReadReg(rs2)) pc += offset;
 		}
 
 		/// <summary>
@@ -315,7 +305,7 @@ namespace HardwareLab {
 		/// <param name="offset"></param>
 		public void BEQ(Register rs1, Register rs2, int offset) {
 
-			if (GetReg(rs1) == GetReg(rs2)) pc += offset;
+			if (ReadReg(rs1) == ReadReg(rs2)) pc += offset;
 		}
 
 		#endregion
