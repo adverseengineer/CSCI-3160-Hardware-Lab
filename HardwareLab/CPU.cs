@@ -310,6 +310,11 @@ namespace HardwareLab {
 
 		#endregion
 
+		#region Handling Hazards
+
+		public void foward()
+
 		#endregion
+
 	}
 }
