@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace HardwareLab {
-	class Testing {
+	static class Testing {
 	
 		
 	}

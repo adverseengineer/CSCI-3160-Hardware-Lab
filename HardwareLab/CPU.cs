@@ -100,7 +100,7 @@ namespace HardwareLab {
 
 			Word fetchedWord = 0;
 			for(int i = 0; i < sizeof(Word); i++)
-				fetchedWord |= (Word)(mem[addr + (sizeof(Word) - i) - 1] << (i * 8));
+				fetchedWord |= (Word)(mem[addr + i] << (i * 8));
 
 			return fetchedWord;
 		}
@@ -116,7 +116,7 @@ namespace HardwareLab {
 			Debug.Assert(addr < MAX_ADDR - sizeof(Word) + 1, "memory write out of range");
 
 			for (int i = 0; i < sizeof(Word); i++)
-				mem[addr + (sizeof(Word) - i) - 1] = (Byte)((value >> (i * 8)) & 0xFF);
+				mem[addr + i] = (Byte)((value >> (i * 8)) & 0xFF);
 		}
 
 		#endregion

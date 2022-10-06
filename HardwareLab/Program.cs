@@ -1,8 +1,8 @@
 ﻿namespace HardwareLab {
 
-	internal class Program {
+	static class Program {
 
-		static void Main(string[] args) {
+		public static void Main(string[] args) {
 
 			CPU cpu = new CPU();
 
