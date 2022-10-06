@@ -1,26 +1,28 @@
-﻿namespace HardwareLab {
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-	internal class Program {
+using System.Diagnostics;
+using System.Data.SqlTypes;
 
-		static void Main(string[] args) {
 
-			CPU cpu = new CPU();
+namespace HardwareLab {
 
-			//set up some initial memory
-			cpu.WriteWord(0, 0x9);
-			cpu.WriteWord(4, 0x5);
+	public class Program 
+	{
 
-			//load both into registers
-			cpu.LW(CPU.Register.t1, CPU.Register.zero, 0);
-			cpu.LW(CPU.Register.t2, CPU.Register.zero, 4);
+		static void Main(string[] args) 
+		{
+			Instruction i1 = new Instruction("add, x9, x4, x2");
 
-			//add them, and store the result
-			cpu.ADD(CPU.Register.t1, CPU.Register.t1, CPU.Register.t2);
-			cpu.SW(CPU.Register.zero, CPU.Register.t1, 8);
+			Instruction it = new Instruction("lw, x4, 20(x7)");
 
-			//dump to see the results
-			cpu.RegDump();
-			cpu.HexDump(32);
+			Console.WriteLine(i1.getDestRegister);
+			Console.ReadLine();
+
+			
 		}
 	}
 }

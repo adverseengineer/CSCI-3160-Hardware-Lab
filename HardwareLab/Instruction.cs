@@ -81,7 +81,38 @@ namespace HardwareLab
 
         }
 
-        
+        //This method is for getting the first source in the instruction
+        public string getSource1()
+        {
+            //This indicates that the instruction is either a lw or sw
+            if(struction[0].Length() == 2)
+            {
+                char[] source = struction[2].ToCharArray();
+
+                //this represents the source that we will return
+                string s1 = "";
+                int start = 0;
+
+                while(start < source.Length());
+                {
+                    //we just want the register number that is associated with the lw or sw
+                    if(source[start].Equals("x"))
+                    {
+                        s1+= source[start];
+                        s1+= source[start + 1];
+                        break;
+                    }
+
+                }
+
+                return s1;
+            }
+            else 
+            {
+                //if its an arithmetic intstuction, we can just return the third element in the array
+                return struction[2];
+            }
+        }
         
     }
 
