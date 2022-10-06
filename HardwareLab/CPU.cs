@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 using System.Diagnostics;
-using System.Data.SqlTypes;
 
 namespace HardwareLab {
 
@@ -25,86 +24,6 @@ namespace HardwareLab {
 		//we define our memory as an array of words, with enough words to add up to MAX_ADDR bytes
 		private Byte[] mem = new Byte[MAX_ADDR / sizeof(Byte)];
 
-		#region Register Look-up Tables
-
-		/// <summary>
-		/// an enum to make register accesses safer
-		/// </summary>
-		public enum Register : int {
-			zero = 0,
-			ra = 1,
-			sp = 2,
-			gp = 3,
-			tp = 4,
-			t0 = 5,
-			t1 = 6,
-			t2 = 7,
-			fp = 8, s0 = 8,
-			s1 = 9,
-			a0 =10,
-			a1 = 11,
-			a2 = 12,
-			a3 = 13,
-			a4 = 14,
-			a5 = 15,
-			a6 = 16,
-			a7 = 17,
-			s2 = 18,
-			s3 = 19,
-			s4 = 20,
-			s5 = 21,
-			s6 = 22,
-			s7 = 23,
-			s8 = 24,
-			s9 = 25,
-			s10 = 26,
-			s11 = 27,
-			t3 = 28,
-			t4 = 29,
-			t5 = 30,
-			t6 = 31,
-		}
-
-		/// <summary>
-		/// a dictionary used for name lookups of registers
-		/// </summary>
-		private static Dictionary<Register, string> registerNames = new Dictionary<Register, string> {
-			{ Register.zero, "zero" },
-			{ Register.ra, "ra" },
-			{ Register.sp, "sp" },
-			{ Register.gp, "gp" },
-			{ Register.tp, "tp" },
-			{ Register.t0, "t0" },
-			{ Register.t1, "t1" },
-			{ Register.t2, "t2" },
-			{ Register.fp, "fp" }, //fp is also s0
-			{ Register.s1, "s1" },
-			{ Register.a0, "a0" },
-			{ Register.a1, "a1" },
-			{ Register.a2, "a2" },
-			{ Register.a3, "a3" },
-			{ Register.a4, "a4" },
-			{ Register.a5, "a5" },
-			{ Register.a6, "a6" },
-			{ Register.a7, "a7" },
-			{ Register.s2, "s2" },
-			{ Register.s3, "s3" },
-			{ Register.s4, "s4" },
-			{ Register.s5, "s5" },
-			{ Register.s6, "s6" },
-			{ Register.s7, "s7" },
-			{ Register.s8, "s8" },
-			{ Register.s9, "s9" },
-			{ Register.s10, "s10" },
-			{ Register.s11, "s11" },
-			{ Register.t3, "t3" },
-			{ Register.t4, "t4" },
-			{ Register.t5, "t5" },
-			{ Register.t6, "t6" },
-		};
-
-		#endregion
-
 		#region Dumpers
 
 		/// <summary>
@@ -113,7 +32,7 @@ namespace HardwareLab {
 		public void RegDump() {
 
 			for(int i = 1; i < reg.Length; i++) {
-				String regName = String.Format("{0, 4}", registerNames[(Register)i]);
+				String regName = String.Format("{0, 4}", Parser.RegToStr[(Register)i]);
 				String regVal = reg[i].ToString("X8");
 				Console.WriteLine($"{regName}: 0x{regVal}");
 			}
