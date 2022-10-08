@@ -24,6 +24,19 @@ namespace HardwareLab {
 		//we define our memory as an array of words, with enough words to add up to MAX_ADDR bytes
 		private Byte[] mem = new Byte[MAX_ADDR / sizeof(Byte)];
 
+		private Queue<int> fetchQueue = new Queue<int>();
+		private Queue<int> decodeQueue = new Queue<int>();
+		private Queue<int> executeQueue = new Queue<int>();
+		private Queue<int> memAccQueue = new Queue<int>();
+		private Queue<int> writeQueue = new Queue<int>();
+
+		private Queue<Instruction> instructionQueue = new Queue<Instruction>();
+
+		public void ExecuteFile(string path) {
+
+			
+		}
+
 		#region Dumpers
 
 		/// <summary>

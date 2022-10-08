@@ -4,8 +4,36 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+
 namespace HardwareLab {
+
 	static class Parser {
+
+		public static List<string[]> TokenizeSource(string path) {
+
+			string[] lines = File.ReadAllLines(path, Encoding.ASCII);
+			List<string[]> tokens = new List<string[]>();
+
+			Regex comments = new Regex(@"\s*#.+$", RegexOptions.Compiled);
+			Regex whitespace = new Regex(@",?\s+", RegexOptions.Compiled);
+
+			for (int i = 0; i < lines.Length; i++) {
+
+				string currentLine = lines[i];
+
+				currentLine = comments.Replace(currentLine, "");
+				currentLine = whitespace.Replace(currentLine, " ");
+
+				//if that leaves us with any line left, tokenize it
+				if(currentLine.Length > 0)
+					tokens.Add(currentLine.Split(" "));
+			}
+
+			return tokens;
+		}
 
 		/// <summary>
 		/// converts register enum values to the proper string representation
